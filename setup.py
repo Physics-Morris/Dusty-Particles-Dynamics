@@ -6,5 +6,5 @@ setup(
     description='Dusty Particles Dynamics',
     author='Morris',
     license='MIT',
-    install_requires=['numpy', 'scipy', 'matplotlib', 'tqdm', 'math']
+    install_requires=['numpy', 'scipy', 'matplotlib', 'tqdm']
 )
