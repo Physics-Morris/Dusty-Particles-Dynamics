@@ -5,13 +5,16 @@ import scipy.interpolate
 from tqdm import tqdm
 
 kb = 1.38064852 * 1e-23
+eps0 = 8.854187817e-12
+ec = 1.60217662e-19
 
 class Simulation:
 
     # initialize the simulation
     def __init__(self, total_time: float, dt: float, temperature_i: float, temperature_n: float,
                  mass_n: float, mass_i: float, density_n: float, density_i: float, debye_length: float,
-                 E_field: float, conductivity: float, grid_size: float, boundary: dict) -> None:
+                 E_field: float, conductivity: float, v_thn: float, v_n: float, v_i: float,
+                 grid_size: float, boundary: dict) -> None:
         self.total_time = total_time
         self.dt = dt
         self.temperature_i = temperature_i
@@ -29,6 +32,9 @@ class Simulation:
         self.debye_length = debye_length
         self.E_field = E_field
         self.conductivity = conductivity
+        self.v_thn = v_thn
+        self.v_n = v_n
+        self.v_i = v_i
         self.grid_size = grid_size
         self.boundary = boundary
 
@@ -169,6 +175,8 @@ class Simulation:
         total += self.gravity(i)
         total += self.electrostatic(i, x0, points)
         total += self.thermophoresis(i, x0, points)
+        total += self.neutral_drag(i, x0, points)
+        total += self.ion_drag(i, x0, points)
         return total
 
     # calculate gravity force Fg = 4/3 * pi * r^3 * rho * g
@@ -204,10 +212,31 @@ class Simulation:
         return Ft
 
     # calculate neutral drag force Fn = - 4/3 * pi * r_d^2 * n_n * m_n * v_thn * (v_d - v_n) 
-    def neutral_drag(self, particle: list) -> list:
-        pass
+    def neutral_drag(self, i, x0, points) -> list:
+        n_n = scipy.interpolate.interpn(points, self.density_n, x0, method='linear')
+        v_thn = scipy.interpolate.interpn(points, self.v_thn, x0, method='linear')
+        v_nx = scipy.interpolate.interpn(points, self.v_n[0], x0, method='linear')
+        v_ny = scipy.interpolate.interpn(points, self.v_n[1], x0, method='linear')
+        v_nz = scipy.interpolate.interpn(points, self.v_n[2], x0, method='linear')
+        v_n = numpy.array([v_nx[0], v_ny[0], v_nz[0]])
+        Fn = - 4.0 / 3.0 * math.pi * self.particles_r[i]**2 * n_n * self.mass_n * v_thn * (self.particles_vel[i] - v_n)
+        return Fn
 
     # calculate ion drag force Fi = F_i-coll + F_i-or = ni * mi * vi * vs * pi * bc^2 +
     #                                                   ni * mi * vi * vs * 4 * pi * bn_pi/2^2 * gamma
-    def ion_drag(self, particle: list) -> list:
-        pass
+    def ion_drag(self, i, x0, points):
+        Ti = scipy.interpolate.interpn(points, self.temperature_i, x0, method='linear')
+        n_i = scipy.interpolate.interpn(points, self.density_n, x0, method='linear')
+        v_ix = scipy.interpolate.interpn(points, self.v_i[0], x0, method='linear')
+        v_iy = scipy.interpolate.interpn(points, self.v_i[1], x0, method='linear')
+        v_iz = scipy.interpolate.interpn(points, self.v_i[2], x0, method='linear')
+        v_i = numpy.array([v_ix[0], v_iy[0], v_iz[0]])
+        v_s = (8.0 * kb * Ti / math.pi / self.mass_i + numpy.dot(v_i, v_i))**0.5
+        phi_d = self.particles_charge[i] / 4.0 / math.pi / eps0 / self.particles_r[i]
+        bc2 = self.particles_r[i]**2 * (1.0 - 2 * self.particles_charge[i] * phi_d / self.mass_i / numpy.dot(v_i, v_i))
+        F_icoll = n_i * self.mass_i * v_i * v_s * math.pi * bc2**2
+        bpi2 = ec * self.particles_charge[i] / (4.0 * math.pi * eps0 * self.mass_i * numpy.dot(v_s, v_s))
+        Gamma = 0.5 * math.log((self.debye_length**2 + bpi2**2) / (bc2 + bpi2**2))
+        F_ior = n_i * self.mass_i * v_i * v_s * 4.0 * math.pi * bpi2**2 * Gamma
+        Fi = F_icoll + F_ior
+        return Fi
