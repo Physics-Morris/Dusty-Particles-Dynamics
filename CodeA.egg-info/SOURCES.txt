@@ -1,0 +1,10 @@
+LICENSE
+pyproject.toml
+setup.py
+CodeA/__init__.py
+CodeA/core.py
+CodeA.egg-info/PKG-INFO
+CodeA.egg-info/SOURCES.txt
+CodeA.egg-info/dependency_links.txt
+CodeA.egg-info/requires.txt
+CodeA.egg-info/top_level.txt
