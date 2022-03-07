@@ -2,15 +2,16 @@ import numpy
 import math
 import scipy
 import scipy.interpolate
-import random
+from tqdm import tqdm
 
+kb = 1.38064852 * 1e-23
 
 class Simulation:
 
     # initialize the simulation
     def __init__(self, total_time: float, dt: float, temperature_i: float, temperature_n: float,
                  mass_n: float, mass_i: float, density_n: float, density_i: float, debye_length: float,
-                 E_field: float, grid_size: float, boundary: dict) -> None:
+                 E_field: float, conductivity: float, grid_size: float, boundary: dict) -> None:
         self.total_time = total_time
         self.dt = dt
         self.temperature_i = temperature_i
@@ -27,6 +28,7 @@ class Simulation:
         self.mass = []
         self.debye_length = debye_length
         self.E_field = E_field
+        self.conductivity = conductivity
         self.grid_size = grid_size
         self.boundary = boundary
 
@@ -59,8 +61,12 @@ class Simulation:
         for i in range(num_part):
             self.mass.append(self.particles_rho[i] * self.particles_r[i]**3 * 4/3 * math.pi)
 
+        # calculate gradient T
+        gradTn = numpy.gradient(self.temperature_n, self.grid_size[0], self.grid_size[1], self.grid_size[2])
+        self.gradient_Tn = numpy.array(gradTn)
+
         # run the simulation
-        for i in range(int(self.total_time / self.dt)):
+        for i in tqdm(range(int(self.total_time / self.dt))):
             self.move(num_part, step=i)
 
     # move particles
@@ -162,6 +168,7 @@ class Simulation:
         total = numpy.zeros(3)
         total += self.gravity(i)
         total += self.electrostatic(i, x0, points)
+        total += self.thermophoresis(i, x0, points)
         return total
 
     # calculate gravity force Fg = 4/3 * pi * r^3 * rho * g
@@ -185,12 +192,16 @@ class Simulation:
         Fe = Qd * E_interp * (1 + (rd / ld)**2 / 3 * (1 + rd / ld))
         return Fe
 
-    # calculate thermophoresis force FT = -32/15 * (pi * m_n / 8 / kb / Tn)**0.5 * r_d^2 * k_tr * del_Tn
-    def thermophoresis(self, particle: list) -> list:
-        # calculate gradient T
-        def gradientT(self):
-            pass
-        pass
+    # calculate thermophoresis force FT = -32/15 * (pi * m_n / 8 / kb / Tn)**0.5 * r_d^2 * k_tr * grad_Tn
+    def thermophoresis(self, i, x0, points):
+        # interpolate the temperature
+        Tn = scipy.interpolate.interpn(points, self.temperature_n, x0, method='linear')
+        grad_Tnx = scipy.interpolate.interpn(points, self.gradient_Tn[0], x0, method='linear')
+        grad_Tny = scipy.interpolate.interpn(points, self.gradient_Tn[1], x0, method='linear')
+        grad_Tnz = scipy.interpolate.interpn(points, self.gradient_Tn[2], x0, method='linear')
+        Ft = - 32.0 / 15.0 * (math.pi * self.mass_n / 8.0 / kb / Tn)**0.5 * \
+             self.particles_r[i]**2 * self.conductivity * numpy.array([grad_Tnx[0], grad_Tny[0], grad_Tnz[0]])
+        return Ft
 
     # calculate neutral drag force Fn = - 4/3 * pi * r_d^2 * n_n * m_n * v_thn * (v_d - v_n) 
     def neutral_drag(self, particle: list) -> list:
