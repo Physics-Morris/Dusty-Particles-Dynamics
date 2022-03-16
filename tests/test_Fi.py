@@ -12,12 +12,12 @@ sys.path.append('../')
 from CodeA import core
 import numpy as np
 
-bd = {'xmin': ['open', 0.],
-      'xmax': ['open', 10.],
-      'ymin': ['open', 0.],
-      'ymax': ['open', 10.],
+bd = {'xmin': ['reflect', 0.],
+      'xmax': ['reflect', 10.],
+      'ymin': ['reflect', 0.],
+      'ymax': ['reflect', 10.],
       'zmin': ['open', 0.],
-      'zmax': ['open', 10.]}
+      'zmax': ['reflect', 10.]}
 grid_size = [0.1, 0.1, 0.1]
 
 #########################################################
@@ -71,7 +71,7 @@ n_i = ni_func(*np.meshgrid(*points, indexing='ij'))
 #########################################################
 
 
-sim = core.Simulation(total_time=2, dt=1e-2, temperature_i=Ti, temperature_n=Tn,
+sim = core.Simulation(total_time=5, dt=1e-2, temperature_i=Ti, temperature_n=Tn,
                       mass_n=1, mass_i=1, density_n=n_n, density_i=n_i, debye_length=1,
                       E_field=[Ex_field, Ey_field, Ez_field], conductivity=1, v_thn=v_thn,
                       v_n=v_n, v_i=v_i, grid_size=grid_size, boundary=bd)
@@ -112,5 +112,5 @@ plt.xlabel('$y$')
 plt.ylabel('$z$')
 plt.title('$F_g + F_E + F_T + F_n + F_i$')
 plt.tight_layout()
-plt.savefig('Fi.png', dpi=500)
+plt.savefig('Fi_refl.png', dpi=500)
 plt.show()

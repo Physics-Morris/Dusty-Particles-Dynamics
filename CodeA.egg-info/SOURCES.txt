@@ -1,5 +1,8 @@
+.gitignore
 LICENSE
+Makefile
 pyproject.toml
+requirments.txt
 setup.py
 CodeA/__init__.py
 CodeA/core.py
@@ -8,3 +11,11 @@ CodeA.egg-info/SOURCES.txt
 CodeA.egg-info/dependency_links.txt
 CodeA.egg-info/requires.txt
 CodeA.egg-info/top_level.txt
+CodeA/__pycache__/__init__.cpython-39.pyc
+CodeA/__pycache__/core.cpython-39.pyc
+tests/force.py
+tests/test_FE.py
+tests/test_FT.py
+tests/test_Fg.py
+tests/test_Fi.py
+tests/test_Fn.py

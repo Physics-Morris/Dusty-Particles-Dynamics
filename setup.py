@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 setup(
     name='CodeA',
     packages=find_packages(),
-    version='1.0',
+    version='1.2',
     description='Dusty Particles Dynamics',
     author='Morris',
     license='MIT',
