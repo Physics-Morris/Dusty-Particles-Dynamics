@@ -4,7 +4,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/Physics-Morris/Dusty-Particles-Dynamics">
-    <img src="https://github.com/Physics-Morris/Dusty-Particles-Dynamics/blob/main/tests/Fi_refl.png" alt="Logo" width="80" height="80">
+    <img src="https://github.com/Physics-Morris/Dusty-Particles-Dynamics/blob/main/tests/Fi_refl.png" alt="Logo" width="150" >
   </a>
 
   <h3 align="center">Dusty Particles Dynamics</h3>
